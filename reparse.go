@@ -48,16 +48,10 @@ func ReparseCompactDeclarationWithOptions(
 	}
 
 	fragmentOptions := ParseOptions{
-		DiscardTokens: true,
-		DiscardTrivia: true,
-	}
-	for start, end := range options.CaseMacroEnds {
-		if start >= currentRange.Start && end <= currentRange.End {
-			if fragmentOptions.CaseMacroEnds == nil {
-				fragmentOptions.CaseMacroEnds = make(map[int]int)
-			}
-			fragmentOptions.CaseMacroEnds[start-currentRange.Start] = end - currentRange.Start
-		}
+		DiscardTokens:        true,
+		DiscardTrivia:        true,
+		CaseMacroEnds:        rebaseMacroEnds(options.CaseMacroEnds, currentRange),
+		ConditionalMacroEnds: rebaseMacroEnds(options.ConditionalMacroEnds, currentRange),
 	}
 	fragment := ParseCompact(source[currentRange.Start:currentRange.End], fragmentOptions)
 	fragmentIndex := BuildDeclarationIndex(fragment)
@@ -94,6 +88,19 @@ func ReparseCompactDeclarationWithOptions(
 		Source: source, Tokens: compact, Trivia: trivia, Origins: origins, MacroNames: macroNames,
 		Tree: tree,
 	}, true
+}
+
+func rebaseMacroEnds(ends map[int]int, region ByteRange) map[int]int {
+	var result map[int]int
+	for start, end := range ends {
+		if start >= region.Start && end <= region.End {
+			if result == nil {
+				result = make(map[int]int)
+			}
+			result[start-region.Start] = end - region.Start
+		}
+	}
+	return result
 }
 
 func validEdit(previous, current []byte, before, after ByteRange) bool {
