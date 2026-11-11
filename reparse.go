@@ -14,6 +14,18 @@ func ReparseCompactDeclaration(
 	before ByteRange,
 	after ByteRange,
 ) (*CompactFile, bool) {
+	return ReparseCompactDeclarationWithOptions(source, tokens, previous, before, after, ParseOptions{})
+}
+
+// ReparseCompactDeclarationWithOptions uses current source offsets for macro hints.
+func ReparseCompactDeclarationWithOptions(
+	source []byte,
+	tokens []token.Token,
+	previous *CompactFile,
+	before ByteRange,
+	after ByteRange,
+	options ParseOptions,
+) (*CompactFile, bool) {
 	if previous == nil || previous.HasParseErrors() || len(previous.Lines.Starts) != 0 ||
 		!validEdit(previous.Source, source, before, after) {
 		return nil, false
@@ -35,10 +47,19 @@ func ReparseCompactDeclaration(
 		return nil, false
 	}
 
-	fragment := ParseCompact(source[currentRange.Start:currentRange.End], ParseOptions{
+	fragmentOptions := ParseOptions{
 		DiscardTokens: true,
 		DiscardTrivia: true,
-	})
+	}
+	for start, end := range options.CaseMacroEnds {
+		if start >= currentRange.Start && end <= currentRange.End {
+			if fragmentOptions.CaseMacroEnds == nil {
+				fragmentOptions.CaseMacroEnds = make(map[int]int)
+			}
+			fragmentOptions.CaseMacroEnds[start-currentRange.Start] = end - currentRange.Start
+		}
+	}
+	fragment := ParseCompact(source[currentRange.Start:currentRange.End], fragmentOptions)
 	fragmentIndex := BuildDeclarationIndex(fragment)
 	replacement, ok := fragmentIndex.At(0)
 	if fragment.HasParseErrors() || !fragmentIndex.Reliable() || fragmentIndex.Len() != 1 || !ok ||

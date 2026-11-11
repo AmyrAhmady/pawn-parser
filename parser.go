@@ -34,10 +34,13 @@ func Parse(source []byte) *File {
 	return ParseWithOptions(source, ParseOptions{})
 }
 
-// ParseOptions controls retained parse data.
+// ParseOptions controls parsing and retained data.
 type ParseOptions struct {
 	DiscardTokens bool
 	DiscardTrivia bool
+	// CaseMacroEnds maps original byte starts to exclusive ends of
+	// preprocessor-confirmed angle-delimited macro invocations.
+	CaseMacroEnds map[int]int
 }
 
 // ParseWithOptions parses source with retention options.
@@ -67,6 +70,7 @@ func parseTokens(source []byte, toks []token.Token, options ParseOptions) *File 
 		})
 	}
 	p := newPointerParser(source, toks, nil)
+	p.caseMacroEnds = options.CaseMacroEnds
 	root := p.parseSourceFile()
 	p.buildDiagnosticCoverage()
 	p.ensureErrorDiagnostics(root)
@@ -119,6 +123,7 @@ type parser[N comparable, S nodeSink[N]] struct {
 	knownTags         map[string]struct{}
 	knownMacros       map[string]struct{}
 	declarationMacros map[string]struct{}
+	caseMacroEnds     map[int]int
 
 	sink S
 

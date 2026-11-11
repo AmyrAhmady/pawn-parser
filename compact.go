@@ -268,6 +268,7 @@ func parseCompactContext(
 	}
 	p := &parser[uint32, compactNodeSink]{
 		source: source, toks: toks, sink: sink, ctx: parserContext,
+		caseMacroEnds: options.CaseMacroEnds,
 	}
 	root := p.parseSourceFile()
 	p.buildDiagnosticCoverage()
