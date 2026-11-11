@@ -357,6 +357,35 @@ func TestParseEnum(t *testing.T) {
 	}
 }
 
+func TestParseEnumTagAndName(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		header, name, tag string
+	}{
+		{"_:Size", "Size", "_"},
+		{"Float:Values", "Values", "Float"},
+		{"Float:", "", "Float"},
+		{"Size", "Size", ""},
+	} {
+		t.Run(test.header, func(t *testing.T) {
+			src := "enum " + test.header + " { Entry };"
+			file := Parse([]byte(src))
+			mustNotBeBroken(t, file, src)
+			enum := file.Root.Children[0]
+			var name, tag string
+			if node := enum.Field("name"); node != nil {
+				name = node.Text([]byte(src))
+			}
+			if node := enum.Field("tag"); node != nil && len(node.Children) == 1 {
+				tag = node.Children[0].Text([]byte(src))
+			}
+			if name != test.name || tag != test.tag {
+				t.Fatalf("enum name %q, tag %q, want name %q, tag %q", name, tag, test.name, test.tag)
+			}
+		})
+	}
+}
+
 func TestParseMalformedDoesNotPanicOrBreak(t *testing.T) {
 	t.Parallel()
 	inputs := []string{
