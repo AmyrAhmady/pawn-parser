@@ -357,6 +357,16 @@ func TestParseEnum(t *testing.T) {
 	}
 }
 
+func TestParenthesizedTagCastInCaseValue(t *testing.T) {
+	t.Parallel()
+	src := "main() { switch (1) { case (_:1): return 1; default: return 0; } }"
+	file := Parse([]byte(src))
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("parenthesized tag cast diagnostics: %+v", file.Diagnostics)
+	}
+	mustNotBeBroken(t, file, src)
+}
+
 func TestParseEnumTagAndName(t *testing.T) {
 	t.Parallel()
 	for _, test := range []struct {
