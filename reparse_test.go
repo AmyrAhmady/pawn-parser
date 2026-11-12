@@ -34,6 +34,8 @@ func TestReparseCompactDeclarationMatchesCleanParse(t *testing.T) {
 }
 
 func TestReparseCompactDeclarationRebasesCaseMacroHint(t *testing.T) {
+	t.Parallel()
+
 	before := []byte("stock First() { return 1; }\nmain() { switch (0) { case HASH<Next page>: return 1; } }\n")
 	after := bytes.Replace(before, []byte("switch (0)"), []byte("switch (10)"), 1)
 	options := func(text []byte) ParseOptions {

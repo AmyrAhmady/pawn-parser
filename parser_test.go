@@ -378,6 +378,8 @@ func TestParseEnumTagAndName(t *testing.T) {
 		{"Size", "Size", ""},
 	} {
 		t.Run(test.header, func(t *testing.T) {
+			t.Parallel()
+
 			src := "enum " + test.header + " { Entry };"
 			file := Parse([]byte(src))
 			mustNotBeBroken(t, file, src)
